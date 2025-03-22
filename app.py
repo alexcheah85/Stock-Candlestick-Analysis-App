@@ -11,8 +11,8 @@ def detect_candlestick_patterns(df):
         return df
 
     df['Body'] = abs(df['Close'] - df['Open'])
-    df['Upper_Shadow'] = df['High'] - df[['Open', 'Close']].max(axis=1)
-    df['Lower_Shadow'] = df[['Open', 'Close']].min(axis=1) - df['Low']
+    df['Upper_Shadow'] = df['High'] - np.maximum(df['Open'], df['Close'])
+    df['Lower_Shadow'] = np.minimum(df['Open'], df['Close']) - df['Low']
     df['Pattern'] = 'None'
 
     # Doji
