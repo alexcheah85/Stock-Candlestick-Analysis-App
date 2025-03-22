@@ -12,21 +12,25 @@ def detect_candlestick_patterns(df):
 
     df = df.copy()
     df['Body'] = abs(df['Close'] - df['Open'])
-    df['Upper_Shadow'] = df['High'] - np.maximum(df['Open'], df['Close'])
-    df['Lower_Shadow'] = np.minimum(df['Open'], df['Close']) - df['Low']
+    df['Upper_Shadow'] = df['High'] - df[['Open', 'Close']].max(axis=1)
+    df['Lower_Shadow'] = df[['Open', 'Close']].min(axis=1) - df['Low']
     df['Pattern'] = 'None'
 
     # Doji
-    df.loc[(df['Body'] <= 0.1 * (df['High'] - df['Low'])) & (df['Upper_Shadow'] > 0) & (df['Lower_Shadow'] > 0), 'Pattern'] = 'Doji'
+    doji_condition = (df['Body'] <= 0.1 * (df['High'] - df['Low'])) & (df['Upper_Shadow'] > 0) & (df['Lower_Shadow'] > 0)
+    df.loc[doji_condition, 'Pattern'] = 'Doji'
 
     # Hammer
-    df.loc[(df['Body'] <= 0.3 * (df['High'] - df['Low'])) & (df['Lower_Shadow'] > 2 * df['Body']) & (df['Upper_Shadow'] < df['Body']), 'Pattern'] = 'Hammer'
+    hammer_condition = (df['Body'] <= 0.3 * (df['High'] - df['Low'])) & (df['Lower_Shadow'] > 2 * df['Body']) & (df['Upper_Shadow'] < df['Body'])
+    df.loc[hammer_condition, 'Pattern'] = 'Hammer'
 
     # Bullish Engulfing
-    df.loc[(df['Close'] > df['Open']) & (df['Close'].shift(1) < df['Open'].shift(1)) & (df['Close'] > df['Open'].shift(1)) & (df['Open'] < df['Close'].shift(1)), 'Pattern'] = 'Bullish_Engulfing'
+    bullish_engulfing_condition = (df['Close'] > df['Open']) & (df['Close'].shift(1) < df['Open'].shift(1)) & (df['Close'] > df['Open'].shift(1)) & (df['Open'] < df['Close'].shift(1))
+    df.loc[bullish_engulfing_condition, 'Pattern'] = 'Bullish_Engulfing'
 
     # Bearish Engulfing
-    df.loc[(df['Close'] < df['Open']) & (df['Close'].shift(1) > df['Open'].shift(1)) & (df['Close'] < df['Open'].shift(1)) & (df['Open'] > df['Close'].shift(1)), 'Pattern'] = 'Bearish_Engulfing'
+    bearish_engulfing_condition = (df['Close'] < df['Open']) & (df['Close'].shift(1) > df['Open'].shift(1)) & (df['Close'] < df['Open'].shift(1)) & (df['Open'] > df['Close'].shift(1))
+    df.loc[bearish_engulfing_condition, 'Pattern'] = 'Bearish_Engulfing'
 
     return df
 
