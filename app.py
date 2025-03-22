@@ -6,13 +6,14 @@ import streamlit as st
 
 # Function to detect basic candlestick patterns
 def detect_candlestick_patterns(df):
-    if not all(col in df.columns for col in ['Open', 'High', 'Low', 'Close']):
+    required_columns = ['Open', 'High', 'Low', 'Close']
+    if not all(col in df.columns for col in required_columns):
         st.write('Missing necessary columns in the data.')
         return df
 
     # Ensure the columns are of numeric type
-    df[['Open', 'High', 'Low', 'Close']] = df[['Open', 'High', 'Low', 'Close']].apply(pd.to_numeric, errors='coerce')
-    df.dropna(subset=['Open', 'High', 'Low', 'Close'], inplace=True)
+    df[required_columns] = df[required_columns].apply(pd.to_numeric, errors='coerce')
+    df.dropna(subset=required_columns, inplace=True)
 
     df = df.copy()
     df['Body'] = abs(df['Close'] - df['Open'])
@@ -67,7 +68,10 @@ if st.button('Analyze Stock'):
     # Fetch stock data
     df = yf.download(stock_symbol, start=start_date, end=end_date)
 
-    if not df.empty:
+    # Check if essential columns are present
+    if not all(col in df.columns for col in ['Open', 'High', 'Low', 'Close']):
+        st.write('Data retrieved does not contain required columns. Please try another stock or date range.')
+    elif not df.empty:
         df = detect_candlestick_patterns(df)
         probabilities = predict_movement(df)
 
