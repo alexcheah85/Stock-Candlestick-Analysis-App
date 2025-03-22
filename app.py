@@ -12,10 +12,20 @@ def detect_candlestick_patterns(df):
         return df
 
     # Ensure the columns are of numeric type
-    df[required_columns] = df[required_columns].apply(pd.to_numeric, errors='coerce')
-    df.dropna(subset=required_columns, inplace=True)
+    for col in required_columns:
+        if col not in df.columns:
+            st.write(f'Missing column: {col}. Please try again with a valid stock symbol and date range.')
+            return df
 
-    df = df.copy()
+    df = df.copy()  # Create a copy before modifying
+
+    # Ensure required columns are of numeric type
+    df[required_columns] = df[required_columns].apply(pd.to_numeric, errors='coerce')
+
+    # Drop rows with missing values only if required columns are present
+    if all(col in df.columns for col in required_columns):
+        df.dropna(subset=required_columns, inplace=True)
+
     df['Body'] = abs(df['Close'] - df['Open'])
     df['Upper_Shadow'] = df['High'] - df[['Open', 'Close']].max(axis=1)
     df['Lower_Shadow'] = df[['Open', 'Close']].min(axis=1) - df['Low']
@@ -41,6 +51,9 @@ def detect_candlestick_patterns(df):
 
 
 def predict_movement(df):
+    if 'Pattern' not in df.columns:
+        return {'Up': 0, 'Down': 0, 'Neutral': 0}
+
     pattern_counts = df['Pattern'].value_counts()
     total_patterns = pattern_counts.sum()
 
@@ -68,10 +81,10 @@ if st.button('Analyze Stock'):
     # Fetch stock data
     df = yf.download(stock_symbol, start=start_date, end=end_date)
 
-    # Check if essential columns are present
-    if not all(col in df.columns for col in ['Open', 'High', 'Low', 'Close']):
-        st.write('Data retrieved does not contain required columns. Please try another stock or date range.')
-    elif not df.empty:
+    # Check if data is retrieved properly
+    if df.empty or not all(col in df.columns for col in ['Open', 'High', 'Low', 'Close']):
+        st.write('No valid data found. Please try a different stock symbol or date range.')
+    else:
         df = detect_candlestick_patterns(df)
         probabilities = predict_movement(df)
 
@@ -91,5 +104,3 @@ if st.button('Analyze Stock'):
         # Download Process
         csv = df.to_csv(index=True)
         st.download_button(label="Download Analyzed Data as CSV", data=csv, file_name=f'{stock_symbol}_analyzed_data.csv', mime='text/csv')
-    else:
-        st.write('No data found. Please try a different stock symbol or date range.')
