@@ -10,6 +10,10 @@ def detect_candlestick_patterns(df):
         st.write('Missing necessary columns in the data.')
         return df
 
+    # Ensure the columns are of numeric type
+    df[['Open', 'High', 'Low', 'Close']] = df[['Open', 'High', 'Low', 'Close']].apply(pd.to_numeric, errors='coerce')
+    df.dropna(subset=['Open', 'High', 'Low', 'Close'], inplace=True)
+
     df = df.copy()
     df['Body'] = abs(df['Close'] - df['Open'])
     df['Upper_Shadow'] = df['High'] - df[['Open', 'Close']].max(axis=1)
