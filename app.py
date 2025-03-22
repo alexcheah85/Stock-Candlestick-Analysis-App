@@ -6,6 +6,10 @@ import streamlit as st
 
 # Function to detect basic candlestick patterns
 def detect_candlestick_patterns(df):
+    if not all(col in df.columns for col in ['Open', 'High', 'Low', 'Close']):
+        st.write('Missing necessary columns in the data.')
+        return df
+
     df['Body'] = abs(df['Close'] - df['Open'])
     df['Upper_Shadow'] = df['High'] - df[['Open', 'Close']].max(axis=1)
     df['Lower_Shadow'] = df[['Open', 'Close']].min(axis=1) - df['Low']
@@ -29,6 +33,9 @@ def detect_candlestick_patterns(df):
 def predict_movement(df):
     pattern_counts = df['Pattern'].value_counts()
     total_patterns = pattern_counts.sum()
+
+    if total_patterns == 0:
+        return {'Up': 0, 'Down': 0, 'Neutral': 0}
 
     # Calculate probabilities
     probabilities = {
